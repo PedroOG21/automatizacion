@@ -21,6 +21,7 @@
 .btn-hover:hover {
   transform: scale(1.05);
 }
+
 /* Botón Volver Arriba */
 #scrollTopBtn {
   position: fixed;
@@ -29,57 +30,76 @@
   display: none;
   z-index: 1000;
 }
-/* Estilos para el carrusel */
+
+/* Estilos para el carrusel (scroll-snap, móvil primero) */
 .carousel-wrapper {
   position: relative;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   width: 100%;
-  height: auto;
   min-height: 300px;
   cursor: grab;
   display: flex;
-  justify-content: center;
   align-items: center;
-  perspective: 1200px; /* Para efecto 3D espectacular */
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; /* momentum en iOS */
+  padding: 18px 0;
+  touch-action: pan-x; /* deja que el swipe horizontal funcione */
+  perspective: 1200px; /* opcional para efecto 3D */
 }
+
+/* Ocultar scrollbar visual (sólo estética) */
+.carousel-wrapper::-webkit-scrollbar { display: none; }
+.carousel-wrapper { scrollbar-width: none; /* Firefox */ }
+
 .carousel {
   display: flex;
   align-items: center;
-  transition: transform 0.3s ease-out;
-  transform-style: preserve-3d;
+  gap: 18px;
+  width: max-content;
+  transition: transform 0.2s ease-out;
 }
+
+/* Imagenes QR */
 .qr-image {
-  width: 90vw;
-  max-width: 300px;
+  flex: 0 0 auto;                /* no se encogen, ancho fijo por dispositivo */
+  width: 90vw;                   /* en móvil ocupa casi toda la pantalla */
+  max-width: 320px;
   height: auto;
   object-fit: contain;
-  transition: filter 0.5s ease, transform 0.5s ease, opacity 0.5s ease, image-rendering 0.5s ease;
-  margin: 0 15px;
+  transition: filter 0.35s ease, transform 0.35s ease, opacity 0.35s ease;
+  margin: 0 6px;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  scroll-snap-align: center;     /* snap en el centro */
+  image-rendering: auto;
 }
 
 @media (min-width: 768px) {
   .qr-image {
-    width: 250px;
-    margin: 0 20px;
+    width: 240px;
+    max-width: 260px;
+    margin: 0 12px;
   }
 }
 
+/* Estado activo (la del medio) */
 .qr-image.active {
-  transform: scale(1.2) rotateY(0deg);
+  transform: scale(1.18) rotateY(0deg);
   filter: none;
   opacity: 1;
   image-rendering: auto;
   z-index: 10;
 }
+
+/* Estados inactivos (laterales) */
 .qr-image.inactive {
-  transform: scale(0.8) rotateY(30deg);
-  filter: blur(3px) brightness(0.7);
-  opacity: 0.7;
+  transform: scale(0.85) rotateY(20deg);
+  filter: blur(2px) brightness(0.8);
+  opacity: 0.45;
   image-rendering: pixelated;
 }
+
 #qr-carousel img {
   object-fit: contain;
   max-height: 100%;
