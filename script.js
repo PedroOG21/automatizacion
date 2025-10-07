@@ -113,10 +113,15 @@ function drag(e) {
 }
 
 function stopDragging() {
+  if (!isDragging) return;
   isDragging = false;
   carousel.style.cursor = 'grab';
-  const totalImages = carousel.children.length;
+
   const imageWidth = carousel.children[0].offsetWidth;
+  currentIndex = Math.round(-currentTranslate / imageWidth); // Calcula índice real
+  const totalImages = carousel.children.length;
+  currentIndex = Math.max(0, Math.min(currentIndex, totalImages - 1));
+
   currentTranslate = -currentIndex * imageWidth;
   setPosition();
 }
