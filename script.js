@@ -57,58 +57,71 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 // Carrusel de QR
+const carouselWrapper = document.getElementById('qr-carousel');
 const carousel = document.getElementById('carousel');
 let isDragging = false;
 let startPos = 0;
 let currentTranslate = 0;
 let prevTranslate = 0;
 let currentIndex = 0;
+let animationID = null;
+let vel = 0;
+let lastPos = 0;
+let lastTime = 0;
+let totalOriginal = 0;
+let imageWidth = 0;
+let centerOffset = 0;
+let totalImages = 0;
+let cloneCount = 1; // Para infinito
 
-function setPosition() {
+function setPosition(smooth = true) {
+  carousel.style.transition = smooth ? 'transform 0.3s ease-out' : 'none';
   carousel.style.transform = `translateX(${currentTranslate}px)`;
   updateActiveImage();
 }
 
 function updateActiveImage() {
-  const totalImages = carousel.children.length;
-  const containerWidth = carousel.parentElement.offsetWidth;
-  const imageWidth = carousel.children[0].offsetWidth;
-  const centerOffset = (containerWidth - imageWidth) / 2;
+  const images = Array.from(carousel.children);
+  const containerWidth = carouselWrapper.offsetWidth;
   const currentPosition = -currentTranslate + centerOffset;
 
   currentIndex = Math.round(currentPosition / imageWidth);
   currentIndex = Math.max(0, Math.min(currentIndex, totalImages - 1));
 
-  Array.from(carousel.children).forEach((img, index) => {
+  images.forEach((img, index) => {
     img.classList.remove('active', 'inactive');
     if (index === currentIndex) {
-      img.classList.add('active');
+      img.classList.add('active');   // centrada → nítida
     } else {
-      img.classList.add('inactive');
+      img.classList.add('inactive'); // laterales → pixeladas
     }
   });
 }
-
-carousel.addEventListener('mousedown', startDragging);
-carousel.addEventListener('touchstart', startDragging);
-carousel.addEventListener('mouseup', stopDragging);
-carousel.addEventListener('touchend', stopDragging);
-carousel.addEventListener('mousemove', drag);
-carousel.addEventListener('touchmove', drag);
-carousel.addEventListener('mouseleave', stopDragging);
 
 function startDragging(e) {
   isDragging = true;
   carousel.style.cursor = 'grabbing';
   startPos = getPositionX(e);
   prevTranslate = currentTranslate;
+  carousel.style.transition = 'none';
+  if (animationID) cancelAnimationFrame(animationID);
+  lastPos = startPos;
+  lastTime = performance.now();
+  vel = 0;
 }
 
 function drag(e) {
   if (isDragging) {
-    const currentPosition = getPositionX(e);
-    currentTranslate = prevTranslate + currentPosition - startPos;
-    setPosition();
+    const currentPos = getPositionX(e);
+    const now = performance.now();
+    const deltaTime = now - lastTime;
+    if (deltaTime > 0) {
+      vel = (currentPos - lastPos) / deltaTime * 20;
+    }
+    lastPos = currentPos;
+    lastTime = now;
+    currentTranslate = prevTranslate + currentPos - startPos;
+    setPosition(false);
   }
 }
 
@@ -116,28 +129,109 @@ function stopDragging() {
   if (!isDragging) return;
   isDragging = false;
   carousel.style.cursor = 'grab';
+  if (Math.abs(vel) > 1) {
+    animateMomentum(vel);
+  } else {
+    snapToNearest();
+  }
+}
 
-  const imageWidth = carousel.children[0].offsetWidth;
-  currentIndex = Math.round(-currentTranslate / imageWidth); // Calcula índice real
-  const totalImages = carousel.children.length;
+function animateMomentum(initialVel) {
+  let vel = initialVel;
+  let lastTime = performance.now();
+  function loop(now) {
+    const deltaTime = (now - lastTime) / 16;
+    lastTime = now;
+    currentTranslate += vel * deltaTime;
+    setPosition(false);
+    vel *= 0.95;
+    if (Math.abs(vel) > 0.5) {
+      animationID = requestAnimationFrame(loop);
+    } else {
+      snapToNearest();
+    }
+    const minTranslate = - (totalImages - 1) * imageWidth;
+    if (currentTranslate > 0) {
+      currentTranslate -= totalOriginal * imageWidth;
+    } else if (currentTranslate < minTranslate) {
+      currentTranslate += totalOriginal * imageWidth;
+    }
+  }
+  animationID = requestAnimationFrame(loop);
+}
+
+function snapToNearest() {
+  currentIndex = Math.round(-currentTranslate / imageWidth);
   currentIndex = Math.max(0, Math.min(currentIndex, totalImages - 1));
-
   currentTranslate = -currentIndex * imageWidth;
-  setPosition();
+  setPosition(true);
+  handleWrapAround();
+}
+
+function handleWrapAround() {
+  if (currentIndex < cloneCount) {
+    currentIndex += totalOriginal;
+    currentTranslate = -currentIndex * imageWidth;
+    setPosition(false);
+  } else if (currentIndex >= totalOriginal + cloneCount) {
+    currentIndex -= totalOriginal;
+    currentTranslate = -currentIndex * imageWidth;
+    setPosition(false);
+  }
+  updateActiveImage();
 }
 
 function getPositionX(e) {
   return e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
 }
 
-// Auto-slide every 10 seconds
-setInterval(() => {
-  const totalImages = carousel.children.length;
-  currentIndex = (currentIndex + 1) % totalImages;
-  const imageWidth = carousel.children[0].offsetWidth;
+function autoSlide() {
+  currentIndex += 1;
   currentTranslate = -currentIndex * imageWidth;
-  setPosition();
-}, 10000);
+  setPosition(true);
+  carousel.addEventListener('transitionend', checkReset, { once: true });
+  animationID = setTimeout(autoSlide, 10000);
+}
+
+function checkReset() {
+  if (currentIndex >= totalOriginal + cloneCount) {
+    currentIndex -= totalOriginal;
+    currentTranslate = -currentIndex * imageWidth;
+    setPosition(false);
+  }
+}
 
 // Inicializar el carrusel
-setPosition();
+function initCarousel() {
+  const images = Array.from(carousel.children);
+  totalOriginal = images.length;
+  imageWidth = images[0].offsetWidth + 30;
+  const containerWidth = carouselWrapper.offsetWidth;
+  centerOffset = (containerWidth - imageWidth) / 2;
+
+  for (let i = 0; i < cloneCount; i++) {
+    const lastClone = images[totalOriginal - 1 - i].cloneNode(true);
+    carousel.prepend(lastClone);
+    const firstClone = images[i].cloneNode(true);
+    carousel.appendChild(firstClone);
+  }
+
+  totalImages = totalOriginal + 2 * cloneCount;
+  currentIndex = cloneCount;
+  currentTranslate = -currentIndex * imageWidth;
+  setPosition(false);
+
+  animationID = setTimeout(autoSlide, 10000);
+}
+
+// Event listeners
+carousel.addEventListener('mousedown', startDragging);
+carousel.addEventListener('touchstart', startDragging);
+carousel.addEventListener('mouseup', stopDragging);
+carousel.addEventListener('touchend', stopDragging);
+carousel.addEventListener('mousemove', drag);
+carousel.addEventListener('touchmove', drag, { passive: false });
+carousel.addEventListener('mouseleave', stopDragging);
+
+// Inicializar
+initCarousel();

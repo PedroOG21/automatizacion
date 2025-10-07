@@ -33,44 +33,52 @@
 .carousel-wrapper {
   position: relative;
   overflow: hidden;
-  height: 100%;
+  width: 100%;
+  height: auto;
+  min-height: 300px;
   cursor: grab;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1200px; /* Para efecto 3D espectacular */
 }
 .carousel {
   display: flex;
   align-items: center;
-  width: 100%;
-  height: 100%;
-  transform: translateX(-50%);
-  justify-content: center;
+  transition: transform 0.3s ease-out;
+  transform-style: preserve-3d;
 }
 .qr-image {
-  width: 80%; /* En móvil ocupa casi toda la pantalla */
+  width: 90vw;
   max-width: 300px;
   height: auto;
   object-fit: contain;
-  transition: filter 0.5s ease, transform 0.5s ease, opacity 0.5s ease;
-  margin: 0 10px;
+  transition: filter 0.5s ease, transform 0.5s ease, opacity 0.5s ease, image-rendering 0.5s ease;
+  margin: 0 15px;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
 }
 
 @media (min-width: 768px) {
   .qr-image {
-    width: 200px; /* En tablet y escritorio vuelve a tamaño fijo */
+    width: 250px;
+    margin: 0 20px;
   }
 }
 
 .qr-image.active {
-  transform: scale(1.3);
+  transform: scale(1.2) rotateY(0deg);
   filter: none;
   opacity: 1;
+  image-rendering: auto;
   z-index: 10;
 }
 .qr-image.inactive {
-  filter: blur(3px) brightness(0.9);
+  transform: scale(0.8) rotateY(30deg);
+  filter: blur(3px) brightness(0.7);
   opacity: 0.7;
-  transform: scale(0.8);
+  image-rendering: pixelated;
 }
 #qr-carousel img {
   object-fit: contain;
