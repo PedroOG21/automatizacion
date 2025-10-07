@@ -31,72 +31,68 @@
   z-index: 1000;
 }
 
-/* Estilos para el carrusel (scroll-snap, móvil primero) */
+/* Carrusel */
 .carousel-wrapper {
   position: relative;
   overflow-x: auto;
   overflow-y: hidden;
   width: 100%;
-  min-height: 300px;
+  min-height: 280px;
   cursor: grab;
   display: flex;
   align-items: center;
   scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch; /* momentum en iOS */
-  padding: 18px 0;
-  touch-action: pan-x; /* deja que el swipe horizontal funcione */
-  perspective: 1200px; /* opcional para efecto 3D */
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 0;
+  touch-action: pan-x;
+  perspective: 1000px;
 }
 
-/* Ocultar scrollbar visual (sólo estética) */
+/* Ocultar scrollbar */
 .carousel-wrapper::-webkit-scrollbar { display: none; }
-.carousel-wrapper { scrollbar-width: none; /* Firefox */ }
+.carousel-wrapper { scrollbar-width: none; }
 
 .carousel {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   width: max-content;
-  transition: transform 0.2s ease-out;
+  transition: transform 0.25s ease-out;
 }
 
-/* Imagenes QR */
 .qr-image {
-  flex: 0 0 auto;                /* no se encogen, ancho fijo por dispositivo */
-  width: 90vw;                   /* en móvil ocupa casi toda la pantalla */
-  max-width: 320px;
+  flex: 0 0 auto;
+  width: 75vw;          /* móvil: un poco más pequeño */
+  max-width: 240px;
   height: auto;
   object-fit: contain;
   transition: filter 0.35s ease, transform 0.35s ease, opacity 0.35s ease;
   margin: 0 6px;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-  scroll-snap-align: center;     /* snap en el centro */
+  scroll-snap-align: center;
   image-rendering: auto;
 }
 
 @media (min-width: 768px) {
   .qr-image {
-    width: 240px;
-    max-width: 260px;
-    margin: 0 12px;
+    width: 200px;
+    max-width: 220px;
+    margin: 0 10px;
   }
 }
 
-/* Estado activo (la del medio) */
 .qr-image.active {
-  transform: scale(1.18) rotateY(0deg);
+  transform: scale(1.15);
   filter: none;
   opacity: 1;
-  image-rendering: auto;
   z-index: 10;
 }
 
-/* Estados inactivos (laterales) */
 .qr-image.inactive {
-  transform: scale(0.85) rotateY(20deg);
+  transform: scale(0.8) rotateY(15deg);
   filter: blur(2px) brightness(0.8);
-  opacity: 0.45;
+  opacity: 0.5;
   image-rendering: pixelated;
 }
 

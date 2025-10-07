@@ -1,5 +1,5 @@
 // --------------------------
-// Animaciones, formulario y scroll suave (sin tocar)
+// Animaciones y scroll
 // --------------------------
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -16,7 +16,7 @@ window.addEventListener('scroll', () => {
 });
 scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-// Formulario de contacto (visual)
+// Formulario
 const enviarBtn = document.getElementById('enviarBtn');
 const mensajeConfirmacion = document.getElementById('mensajeConfirmacion');
 if (enviarBtn) {
@@ -39,7 +39,7 @@ if (enviarBtn) {
   });
 }
 
-// Smooth scroll para enlaces internos
+// Smooth scroll para enlaces
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -48,17 +48,34 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 // --------------------------
-// Carrusel: uso de scroll-snap + JS que marca la imagen más centrada como `.active`
+// Carrusel
 // --------------------------
 const carouselWrapper = document.querySelector('.carousel-wrapper');
 const carousel = document.getElementById('carousel');
 
 if (carouselWrapper && carousel) {
+  let isDown = false;
+  let startX, scrollLeft;
   const images = Array.from(carousel.children);
   let currentIndex = 0;
-  let rafId = null;
 
-  // Marca la imagen más céntrica como active / inactive
+  // Drag con ratón en escritorio
+  carouselWrapper.addEventListener('mousedown', e => {
+    isDown = true;
+    startX = e.pageX - carouselWrapper.offsetLeft;
+    scrollLeft = carouselWrapper.scrollLeft;
+  });
+  carouselWrapper.addEventListener('mouseleave', () => { isDown = false; });
+  carouselWrapper.addEventListener('mouseup', () => { isDown = false; });
+  carouselWrapper.addEventListener('mousemove', e => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - carouselWrapper.offsetLeft;
+    const walk = (x - startX) * 1.2; // factor arrastre
+    carouselWrapper.scrollLeft = scrollLeft - walk;
+  });
+
+  // Actualiza imagen activa
   function updateActiveImage() {
     const wrapperRect = carouselWrapper.getBoundingClientRect();
     const centerX = wrapperRect.left + wrapperRect.width / 2;
@@ -83,51 +100,27 @@ if (carouselWrapper && carousel) {
     currentIndex = closestIndex;
   }
 
-  // Debounce con requestAnimationFrame para el scroll
-  function onScroll() {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = requestAnimationFrame(() => {
-      updateActiveImage();
-      rafId = null;
-    });
+  // Auto-slide infinito cada 10s
+  function autoSlide() {
+    currentIndex++;
+    if (currentIndex >= images.length) currentIndex = 0;
+    images[currentIndex].scrollIntoView({ behavior: 'smooth', inline: 'center' });
   }
+  setInterval(autoSlide, 10000);
 
-  // Inicial: centra la primera imagen y marca estados
-  function initCarousel() {
-    // Si hay muchas imágenes, centra la primera visible
-    if (images.length > 0) images[0].scrollIntoView({ inline: 'center' });
-    // Pequeño timeout para que el browser calcule medidas
-    setTimeout(updateActiveImage, 80);
-  }
+  // Scroll listener
+  carouselWrapper.addEventListener('scroll', () => {
+    requestAnimationFrame(updateActiveImage);
+  });
 
-  // Click sobre imagen para centrarla
+  // Click en imagen para centrar
   images.forEach((img, i) => {
     img.addEventListener('click', () => {
       img.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-      // updateActiveImage() se llamará por el evento scroll
     });
   });
 
-  // Auto-slide suave cada 10s (se puede comentar si no quieres auto)
-  let autoSlideTimer = setInterval(() => {
-    if (images.length === 0) return;
-    const next = (currentIndex + 1) % images.length;
-    images[next].scrollIntoView({ behavior: 'smooth', inline: 'center' });
-  }, 10000);
-
-  // Parar auto-slide cuando el usuario interactúa manualmente (útil en móvil)
-  carouselWrapper.addEventListener('touchstart', () => clearInterval(autoSlideTimer), { passive: true });
-  carouselWrapper.addEventListener('pointerdown', () => clearInterval(autoSlideTimer), { passive: true });
-
-  // Escuchar scroll
-  carouselWrapper.addEventListener('scroll', onScroll, { passive: true });
-
-  // Inicializa
-  initCarousel();
-
-  // Si la ventana cambia de tamaño recalculamos (y re-marcamos)
-  window.addEventListener('resize', () => {
-    // permitimos que el layout se estabilice
-    setTimeout(() => updateActiveImage(), 120);
-  });
+  // Inicializar
+  setTimeout(updateActiveImage, 200);
+  window.addEventListener('resize', () => setTimeout(updateActiveImage, 300));
 }
